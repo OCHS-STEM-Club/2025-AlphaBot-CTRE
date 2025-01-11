@@ -15,80 +15,146 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-
+import frc.robot.Constants.DriveConstants;
+import frc.robot.commands.Coral_Intake.Coral_Intake_Cmd;
+import frc.robot.commands.Coral_Intake.Coral_Outake_Cmd;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.CoralIntakeSubsystem;
 
 public class RobotContainer {
-    private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
-    /* Setting up bindings for necessary control of the swerve drive platform */
+    // Chooser Definitions
+    private final SendableChooser<Command> autoChooser;
+    private SendableChooser<Double> speedChooser = new SendableChooser<>();
+
+    // Controller Definitions
+    private final CommandXboxController m_driverController = new CommandXboxController(DriveConstants.kDriverControllerPort);
+    
+    // Subsystem Definitions
+    public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    private final CoralIntakeSubsystem m_coralIntakeSubsystem = new CoralIntakeSubsystem();
+
+    // Commands definitions
+    Coral_Intake_Cmd m_coralIntakeCmd = new Coral_Intake_Cmd(m_coralIntakeSubsystem);
+    Coral_Outake_Cmd m_coralOutakeCmd = new Coral_Outake_Cmd(m_coralIntakeSubsystem);
+
+    // Swerve Requests
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-            .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
-            .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
+            .withDeadband(DriveConstants.MAX_SPEED * DriveConstants.TRANSLATION_DEADBAND)
+            .withRotationalDeadband(DriveConstants.MAX_ANGULAR_RATE * DriveConstants.ROTATION_DEADBAND)
+            .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
     private final SwerveRequest.RobotCentric forwardStraight = new SwerveRequest.RobotCentric()
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
-    private final Telemetry logger = new Telemetry(MaxSpeed);
+    // Telemetry defintions
+    private final Telemetry logger = new Telemetry(DriveConstants.MAX_SPEED);
 
-    private final CommandXboxController joystick = new CommandXboxController(0);
-
-    public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-
-    /* Path follower */
-    private final SendableChooser<Command> autoChooser;
-
+    // Main Constructor
     public RobotContainer() {
+        // Auto Chooser Definitions
         autoChooser = AutoBuilder.buildAutoChooser();
-        SmartDashboard.putData("Autos", autoChooser);
+
+        // Adjustable speed Chooser
+        speedChooser.addOption("100%", 1.0);
+        speedChooser.addOption("95%", 0.95);
+        speedChooser.addOption("90%", 0.9);
+        speedChooser.addOption("85%", 0.85);
+        speedChooser.addOption("80%", 0.8);
+        speedChooser.addOption("75%", 0.75);
+        speedChooser.setDefaultOption("70%", 0.7);
+        speedChooser.addOption("65%", 0.65);
+        speedChooser.addOption("60%", 0.6);
+        speedChooser.addOption("55%", 0.55);
+        speedChooser.addOption("50%", 0.5);
+        speedChooser.addOption("45%", 0.45);
+        speedChooser.addOption("40%", 0.4);
+        speedChooser.addOption("35%", 0.35);
+        speedChooser.addOption("30%", 0.3);
+        speedChooser.addOption("25%", 0.25);
+        speedChooser.addOption("0%", 0.0);
+        
+        // Put chooser on dashboard
+        SmartDashboard.putData("Speed Limit", speedChooser);
 
         configureBindings();
+
+        // Put Auto Chooser On Dashboard
+        SmartDashboard.putData("Autos", autoChooser);
     }
 
     private void configureBindings() {
-        // Note that X is defined as forward according to WPILib convention,
-        // and Y is defined as to the left according to WPILib convention.
+
+        // New Speed method called for adjustable speed chooser
+        newSpeed();
+
+        // Swerve Bindings
         drivetrain.setDefaultCommand(
-            // Drivetrain will execute this command periodically
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+                drive.withVelocityX(-m_driverController.getLeftY() * DriveConstants.MAX_SPEED *0.5)
+                    .withVelocityY(-m_driverController.getLeftX() * DriveConstants.MAX_SPEED *0.5)
+                    .withRotationalRate(-m_driverController.getRightX() * DriveConstants.MAX_ANGULAR_RATE *0.5)
             )
         );
 
-        joystick.x().whileTrue(drivetrain.applyRequest(() -> brake));
-        joystick.b().whileTrue(drivetrain.applyRequest(() ->
-            point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
-        ));
+        // Creep button
+        m_driverController.leftBumper().onTrue(Commands.runOnce(() ->
+            DriveConstants.MAX_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * DriveConstants.CREEP_SPEED));
+    
+        // Refresh button for speed chooser
+        m_driverController.leftBumper().onFalse(Commands.runOnce(() ->
+            DriveConstants.MAX_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * speedChooser.getSelected()));
 
-        joystick.pov(0).whileTrue(drivetrain.applyRequest(() ->
-            forwardStraight.withVelocityX(0.5).withVelocityY(0))
-        );
-        joystick.pov(180).whileTrue(drivetrain.applyRequest(() ->
-            forwardStraight.withVelocityX(-0.5).withVelocityY(0))
-        );
+        // joystick.x().whileTrue(drivetrain.applyRequest(() -> brake));
+
+        // joystick.b().whileTrue(drivetrain.applyRequest(() ->
+        //     point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
+        // ));
+
+        // joystick.pov(0).whileTrue(drivetrain.applyRequest(() ->
+        //     forwardStraight.withVelocityX(0.5).withVelocityY(0))
+        // );
+        // joystick.pov(180).whileTrue(drivetrain.applyRequest(() ->
+        //     forwardStraight.withVelocityX(-0.5).withVelocityY(0))
+        // );
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
-        joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-        joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-        joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-        joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+        // joystick.leftBumper().whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
+        // joystick.rightBumper().whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+        // joystick.leftTrigger().whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+        // joystick.rightTrigger().whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
-        // reset the field-centric heading on left bumper presss
-        joystick.a().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+        // Reset GYRO
+        m_driverController.a().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
+        // Intake CMD
+        m_driverController.leftTrigger().whileTrue(
+            m_coralIntakeCmd
+        );
+
+        // Outake CMD
+        m_driverController.rightTrigger().whileTrue(
+            m_coralOutakeCmd
+        );
+
+        // Register Telemetry
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 
+    private void newSpeed() {
+        DriveConstants.LAST_SPEED = speedChooser.getSelected();
+        DriveConstants.MAX_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * DriveConstants.LAST_SPEED;
+      }
+
+    // Autonomous chooser method
     public Command getAutonomousCommand() {
-        /* Run the path selected from the auto chooser */
         return autoChooser.getSelected();
     }
 }

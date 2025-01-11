@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems;
 
+import org.littletonrobotics.junction.AutoLogOutput;
+
 // import com.revrobotics.jni.CANSparkJNI;
 // import com.revrobotics.servohub.ServoHub.ResetMode;
 import com.revrobotics.spark.SparkMax;
@@ -36,7 +38,6 @@ public class CoralIntakeSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    SmartDashboard.putNumber("Coral Intake Motor", coralIntake.get());
 
   }
   
@@ -48,5 +49,10 @@ public class CoralIntakeSubsystem extends SubsystemBase {
   }
   public void intakeOut() {
     coralIntake.set(-0.5);
+  }
+  
+  @AutoLogOutput
+  public double getIntakeSpeed(){
+    return coralIntake.get();
   }
 }

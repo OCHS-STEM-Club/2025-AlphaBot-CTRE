@@ -83,10 +83,12 @@ public class RobotContainer {
         // Put chooser on dashboard
         SmartDashboard.putData("Speed Limit", speedChooser);
 
-        configureBindings();
-
         // Put Auto Chooser On Dashboard
         SmartDashboard.putData("Autos", autoChooser);
+
+        configureBindings();
+
+
     }
 
     private void configureBindings() {

@@ -106,12 +106,12 @@ public class RobotContainer {
         );
 
         // Creep button
-        m_driverController.leftBumper().onTrue(Commands.runOnce(() ->
-            DriveConstants.MAX_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * DriveConstants.CREEP_SPEED));
+        // m_driverController.leftBumper().onTrue(Commands.runOnce(() ->
+        //     DriveConstants.MAX_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * DriveConstants.CREEP_SPEED));
     
-        // Refresh button for speed chooser
-        m_driverController.leftBumper().onFalse(Commands.runOnce(() ->
-            DriveConstants.MAX_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * speedChooser.getSelected()));
+        // // Refresh button for speed chooser
+        // m_driverController.leftBumper().onFalse(Commands.runOnce(() ->
+        //     DriveConstants.MAX_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * speedChooser.getSelected()));
 
         // joystick.x().whileTrue(drivetrain.applyRequest(() -> brake));
 
@@ -128,10 +128,10 @@ public class RobotContainer {
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
-        // joystick.leftBumper().whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-        // joystick.rightBumper().whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-        // joystick.leftTrigger().whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-        // joystick.rightTrigger().whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+        m_driverController.leftBumper().whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
+        m_driverController.rightBumper().whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+        m_driverController.leftTrigger().whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+        m_driverController.rightTrigger().whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
         // Reset GYRO
         m_driverController.a().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));

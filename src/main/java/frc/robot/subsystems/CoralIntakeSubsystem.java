@@ -4,7 +4,6 @@
 
 package frc.robot.subsystems;
 
-import org.littletonrobotics.junction.AutoLogOutput;
 
 // import com.revrobotics.jni.CANSparkJNI;
 // import com.revrobotics.servohub.ServoHub.ResetMode;
@@ -50,8 +49,7 @@ public class CoralIntakeSubsystem extends SubsystemBase {
   public void intakeOut() {
     coralIntake.set(-0.5);
   }
-  
-  @AutoLogOutput
+
   public double getIntakeSpeed(){
     return coralIntake.get();
   }
